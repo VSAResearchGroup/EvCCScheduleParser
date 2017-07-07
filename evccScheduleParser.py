@@ -7,26 +7,39 @@
 from lxml import html as a
 import numpy as np
 import xlwt
-
+import csv
 def print_row(row):
     for i in row:
         print a.tostring(i)
         break
     print "-------------------"
 
-def create_exel(quarters, schedule):
-    wb = xlwt.Workbook()
-    for curr_quarter in range(len(quarters)):
-        ws = wb.add_sheet(quarters[curr_quarter] + " Schedule",cell_overwrite_ok=True)
-        labels = ["Course", "Desc", "Section", "Credits", "Capacity", "Enrolled", "Start Time","End Time","Day","Location"]
-        for curr_label in range(len(labels)):
-            ws.write(0,curr_label, labels[curr_label],style=xlwt.Style.easyxf(strg_to_parse="font: bold on;"))
-        for i in range(np.size(schedule[curr_quarter],0)):
-            for j in range(np.size(schedule[curr_quarter],1)):
 
-                ws.write(1+i,j, schedule[curr_quarter][i][j])
-    wb.save("test.xls")
+def create_cvs(quarter, schedule):
+   # wb = xlwt.Workbook()
+   #  for curr_quarter in range(len(quarters)):
+   #      ws = wb.add_sheet(quarters[curr_quarter] + " Schedule",cell_overwrite_ok=True)
+   #      labels = ["Course", "Desc", "Section", "Credits", "Start Time","End Time","Day","Location"]
+   #      for curr_label in range(len(labels)):
+   #          ws.write(0,curr_label, labels[curr_label],style=xlwt.Style.easyxf(strg_to_parse="font: bold on;"))
+   #
+   #      for i in range(np.size(schedule[curr_quarter],0)):
+   #          print str(i) +"/ " + str(np.size(schedule[curr_quarter],0))
+   #
+   #          for j in range(np.size(schedule[curr_quarter],1)):
+   #              ws.write(1+i,j, schedule[curr_quarter][i][j])
+   #  wb.save("test.xls")
 
+  # source for use of zip function with dictionary init:
+  # https://stackoverflow.com/questions/209840/map-two-lists-into-a-dictionary-in-python
+   with open(quarter+".csv", 'w') as csvfile:
+        #fieldnames = ["Course", "Desc", "Section", "Credits", "Start Time","End Time","Day","Location"]
+        fieldnames = ["Course", "Section", "Credits", "Start Time","End Time","Day","Location"]
+        writer = csv.DictWriter(csvfile,fieldnames=fieldnames)
+        writer.writeheader()
+        for i in schedule:
+            print i
+            writer.writerow(dict(zip(fieldnames,i)))
 
 def convert_to_numerical_time(start, end):
     for i in range(len(start)):
@@ -83,9 +96,10 @@ def parse_days_from_string(days):
 
         a = []
         curr_day = days[i]
+        curr_day = curr_day.strip()
         if curr_day == "ARRANGED" or curr_day == "" or curr_day == "DAILY":
 
-           # a.append("")
+            result.append([])
             continue
         for j in range(len(curr_day)):
 
@@ -99,14 +113,14 @@ def parse_days_from_string(days):
                 a.append(5)
             elif curr_day[j] == "T":
 
-                if(j == len(curr_day)-1 ):
+                if(j == len(curr_day) -1):
                     a.append(2)
 
                 elif (curr_day[j+1] == "h"):
 
                     a.append(4)
                 else:
-                    a.append(4)
+                    a.append(2)
             elif curr_day[j] == "S":
 
                 if (j == len(days) or days[j + 1] != "a"):
@@ -128,8 +142,8 @@ def create_schedule(target_qrt):
     desc = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/p[1]')
 
     # filter out empty descriptions
-    desc_result = []
-    desc = [desc_result.append(x.text) if x.text else '' for x in desc ]
+    #desc_result = []
+    #desc = [desc_result.append(x.text) if x.text else '' for x in desc ]
 
     section = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/table/tr[2]/td[2]/text()[normalize-space(.) != .]')
 
@@ -153,13 +167,19 @@ def create_schedule(target_qrt):
     location = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/table/tr[6]/td[3]/text()')
     #add duplicates per days
 
-    day_list = parse_days_from_string(days);
+    day_list = parse_days_from_string(days)
     #print day_list
-    table = [course_title,desc_result,section,credits,capacity,enrolled,start_time,end_time,days,location]
+    #table = [course_title,desc_result,section,credits,capacity,enrolled,start_time,end_time,days,location]
+    table = [course_title,section,credits,capacity,enrolled,start_time,end_time,days,location]
+
     schedule = []
     for i in range(len(day_list)):
-        for j in range(i):
-            schedule.append([course_title[i],desc_result[i],section[i],credits[i],capacity[i],enrolled[i],start_time[i],end_time[i],days[j],location[i]])
+        #print i
+        for j in range(len(day_list[i])):
+            if len(day_list[i])  != 0:
+                #schedule.append([course_title[i],desc_result[i],section[i],credits[i],start_time[i],end_time[i],day_list[i][j],location[i]])
+                schedule.append([course_title[i],section[i],credits[i],start_time[i],end_time[i],day_list[i][j],location[i]])
+
     #for i in range(len(table)):
      #   schedule[:,i] = table[i]
 
@@ -170,9 +190,11 @@ def create_schedule(target_qrt):
 if __name__ == "__main__":
     #
     quarters = ["Summer", "Fall", "Spring"]
-    schedules = []
-    for i in quarters:
-        schedules.append(create_schedule(i))
+
+    for i in range(len(quarters)):
+        schedule = create_schedule(quarters[i])
+        print "\n" + quarters[i]
+
+        create_cvs(quarters[i], schedule)
     #print schedules
-    create_exel(quarters, schedules)
 
