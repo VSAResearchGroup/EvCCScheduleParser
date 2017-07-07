@@ -18,7 +18,7 @@ def create_exel(quarters, schedule):
     wb = xlwt.Workbook()
     for curr_quarter in range(len(quarters)):
         ws = wb.add_sheet(quarters[curr_quarter] + " Schedule",cell_overwrite_ok=True)
-        labels = ["Course", "Desc", "Section", "Credits", "Capacity", "Enrolled", "Start Time","End Time""Day","Location"]
+        labels = ["Course", "Desc", "Section", "Credits", "Capacity", "Enrolled", "Start Time","End Time","Day","Location"]
         for curr_label in range(len(labels)):
             ws.write(0,curr_label, labels[curr_label],style=xlwt.Style.easyxf(strg_to_parse="font: bold on;"))
 
