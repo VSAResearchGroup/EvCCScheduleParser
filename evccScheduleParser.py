@@ -21,13 +21,10 @@ def create_exel(quarters, schedule):
         labels = ["Course", "Desc", "Section", "Credits", "Capacity", "Enrolled", "Start Time","End Time","Day","Location"]
         for curr_label in range(len(labels)):
             ws.write(0,curr_label, labels[curr_label],style=xlwt.Style.easyxf(strg_to_parse="font: bold on;"))
-
         for i in range(np.size(schedule[curr_quarter],0)):
             for j in range(np.size(schedule[curr_quarter],1)):
 
-                # scheduleschedule[curr_quarter][i,j] is used instead of schedule[curr_quarter,i,j] because
-                # schedule is a 2d java array of 2d numpy arrays
-                ws.write(1+i,j, schedule[curr_quarter][i,j])
+                ws.write(1+i,j, schedule[curr_quarter][i][j])
     wb.save("test.xls")
 
 
@@ -68,8 +65,58 @@ def convert_to_numerical_time(start, end):
         score_min = int(time_atts_start[1]) / 10
         score = score_hr + score_min + 1
         end[i] = score
+def parse_days_from_string(days):
+    "MTWTh"
+
+   # 1 Monday
+   # 2 Tuesday
+   # 3 Wednesday
+   # 4 Thursday
+   # 5 Friday
+   # 6 Saturday
+   # 7 Sunday
 
 
+    result = []
+
+    for i in range(len(days)):
+
+        a = []
+        curr_day = days[i]
+        if curr_day == "ARRANGED" or curr_day == "" or curr_day == "DAILY":
+
+           # a.append("")
+            continue
+        for j in range(len(curr_day)):
+
+
+
+            if curr_day[j] == "M":
+                a.append(1)
+            elif curr_day[j] == "W":
+                a.append(3)
+            elif curr_day[j] == "F":
+                a.append(5)
+            elif curr_day[j] == "T":
+
+                if(j == len(curr_day)-1 ):
+                    a.append(2)
+
+                elif (curr_day[j+1] == "h"):
+
+                    a.append(4)
+                else:
+                    a.append(4)
+            elif curr_day[j] == "S":
+
+                if (j == len(days) or days[j + 1] != "a"):
+                    a.append(7)
+
+                else:
+                    a.append(6)
+        result.append(a)
+
+    return result
 def create_schedule(target_qrt):
     page = file(target_qrt + "_Class Schedule_EvCC.html")
 
@@ -104,11 +151,20 @@ def create_schedule(target_qrt):
     days = [x.text if x.text else '' for x in days]
 
     location = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/table/tr[6]/td[3]/text()')
-    table = [course_title,desc_result,section,credits,capacity,enrolled,start_time,end_time,days,location]
+    #add duplicates per days
 
-    schedule = np.empty((len(section),len(table)),dtype=object)
-    for i in range(len(table)):
-        schedule[:,i] = table[i]
+    day_list = parse_days_from_string(days);
+    #print day_list
+    table = [course_title,desc_result,section,credits,capacity,enrolled,start_time,end_time,days,location]
+    schedule = []
+    for i in range(len(day_list)):
+        for j in range(i):
+            schedule.append([course_title[i],desc_result[i],section[i],credits[i],capacity[i],enrolled[i],start_time[i],end_time[i],days[j],location[i]])
+    #for i in range(len(table)):
+     #   schedule[:,i] = table[i]
+
+
+    #schedule = [x * for x in schedule]
     return schedule
 
 if __name__ == "__main__":
@@ -117,6 +173,6 @@ if __name__ == "__main__":
     schedules = []
     for i in quarters:
         schedules.append(create_schedule(i))
-
+    #print schedules
     create_exel(quarters, schedules)
 
