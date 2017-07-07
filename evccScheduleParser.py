@@ -18,7 +18,7 @@ def create_exel(quarters, schedule):
     wb = xlwt.Workbook()
     for curr_quarter in range(len(quarters)):
         ws = wb.add_sheet(quarters[curr_quarter] + " Schedule",cell_overwrite_ok=True)
-        labels = ["Course", "Desc", "Section", "Credits", "Capacity", "Enrolled", "Time","Day","Location"]
+        labels = ["Course", "Desc", "Section", "Credits", "Capacity", "Enrolled", "Start Time","End Time""Day","Location"]
         for curr_label in range(len(labels)):
             ws.write(0,curr_label, labels[curr_label],style=xlwt.Style.easyxf(strg_to_parse="font: bold on;"))
 
@@ -29,6 +29,45 @@ def create_exel(quarters, schedule):
                 # schedule is a 2d java array of 2d numpy arrays
                 ws.write(1+i,j, schedule[curr_quarter][i,j])
     wb.save("test.xls")
+
+
+def convert_to_numerical_time(start, end):
+    for i in range(len(start)):
+        if start[i] == "":
+            continue
+        curr_time =start[i]
+        curr_time = curr_time.strip()
+        time = curr_time[0:-3]
+        time_atts_start = time.split(":")
+
+        am_pm = curr_time[-2:-1]
+
+        if am_pm == "P" and time_atts_start[0] != '12':
+            time_atts_start[0] = int(time_atts_start[0]) + 12
+
+        score_hr = int(time_atts_start[0]) *6
+        score_min = int(time_atts_start[1]) / 10
+        score = score_hr + score_min + 1
+        start[i] = score
+
+
+    for i in range(len(start)):
+        if end[i] == "":
+            continue
+        curr_time = end[i]
+        curr_time = curr_time.strip()
+        time = curr_time[0:-3]
+        time_atts_start = time.split(":")
+
+        am_pm = curr_time[-2:-1]
+
+        if am_pm == "P" and time_atts_start[0] != '12':
+            time_atts_start[0] = int(time_atts_start[0]) + 12
+
+        score_hr = int(time_atts_start[0]) * 6
+        score_min = int(time_atts_start[1]) / 10
+        score = score_hr + score_min + 1
+        end[i] = score
 
 
 def create_schedule(target_qrt):
@@ -55,14 +94,17 @@ def create_schedule(target_qrt):
     enrolled = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/table/tr[4]/td[2]/text()')
 
     start_end_time = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/table/tr[6]/td[1]/text()')
+    start_time = [x.split("-")[0] if '-' in x  else '' for x in start_end_time]
+    end_time = [x.split("-")[1] if '-' in x else '' for x in start_end_time]
 
+    convert_to_numerical_time(start_time, end_time)
     days = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/table/tr[6]/td[2]')
 
     # remove empty days
     days = [x.text if x.text else '' for x in days]
 
     location = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/table/tr[6]/td[3]/text()')
-    table = [course_title,desc_result,section,credits,capacity,enrolled,start_end_time,days,location]
+    table = [course_title,desc_result,section,credits,capacity,enrolled,start_time,end_time,days,location]
 
     schedule = np.empty((len(section),len(table)),dtype=object)
     for i in range(len(table)):
@@ -77,5 +119,4 @@ if __name__ == "__main__":
         schedules.append(create_schedule(i))
 
     create_exel(quarters, schedules)
-
 
