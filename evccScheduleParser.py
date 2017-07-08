@@ -32,13 +32,18 @@ def create_cvs(quarter, schedule):
 
   # source for use of zip function with dictionary init:
   # https://stackoverflow.com/questions/209840/map-two-lists-into-a-dictionary-in-python
+
+    # encode all unicode characters into ascii in the description
+   for i in schedule:
+           i[4] =  i[4].encode('ascii', 'ignore')
+
    with open(quarter+".csv", 'w') as csvfile:
-        fieldnames =                 ["CourseNumber","Title","MinCredit", "MaxCredit","Description" , "StartTimeID", "EndTimeID","DayID","QuarterID","Year","Status"];
+        fieldnames = ["CourseNumber","Title","MinCredit", "MaxCredit","Description" , "StartTimeID", "EndTimeID","DayID","QuarterID","Year","Status"];
         writer = csv.DictWriter(csvfile,fieldnames=fieldnames)
         writer.writeheader()
         for i in schedule:
             print i
-            writer.writerow(dict(zip(fieldnames,str(i).strip())))
+            writer.writerow(dict(zip(fieldnames,i)))
 
 def convert_to_numerical_time(start, end):
     for i in range(len(start)):
@@ -77,6 +82,8 @@ def convert_to_numerical_time(start, end):
         score_min = int(time_atts_start[1]) / 10
         score = score_hr + score_min + 1
         end[i] = score
+
+
 def parse_title(titles):
     numbers = []
     titles_r = []
