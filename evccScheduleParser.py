@@ -33,13 +33,12 @@ def create_cvs(quarter, schedule):
   # source for use of zip function with dictionary init:
   # https://stackoverflow.com/questions/209840/map-two-lists-into-a-dictionary-in-python
    with open(quarter+".csv", 'w') as csvfile:
-        #fieldnames = ["Course", "Desc", "Section", "Credits", "Start Time","End Time","Day","Location"]
-        fieldnames = ["Course", "Section", "Credits", "Start Time","End Time","Day","Location"]
+        fieldnames =                 ["CourseNumber","Title","MinCredit", "MaxCredit","Description" , "StartTimeID", "EndTimeID","DayID","QuarterID","Year","Status"];
         writer = csv.DictWriter(csvfile,fieldnames=fieldnames)
         writer.writeheader()
         for i in schedule:
             print i
-            writer.writerow(dict(zip(fieldnames,i)))
+            writer.writerow(dict(zip(fieldnames,str(i).strip())))
 
 def convert_to_numerical_time(start, end):
     for i in range(len(start)):
@@ -78,6 +77,18 @@ def convert_to_numerical_time(start, end):
         score_min = int(time_atts_start[1]) / 10
         score = score_hr + score_min + 1
         end[i] = score
+def parse_title(titles):
+    numbers = []
+    titles_r = []
+
+    for i in range(len(titles)):
+        core_info = titles[i].split("-")[1].strip()
+        core_info = core_info.split(" ")
+
+        numbers.append(core_info[0] + " " + core_info[1])
+        titles_r.append(" ".join(core_info[2:len(core_info)]))
+
+    return [numbers,titles_r]
 def parse_days_from_string(days):
     "MTWTh"
 
@@ -131,6 +142,22 @@ def parse_days_from_string(days):
         result.append(a)
 
     return result
+
+def get_qtr_id(qtr):
+
+    # 1 Fall
+    # 2 Winter
+    # 3 Spring
+    # 4 Summer
+    if qtr == "Fall":
+        return 1
+    elif qtr == "Winter":
+        return 2
+    elif qtr == "Spring":
+        return 3
+    else:
+        return 4
+
 def create_schedule(target_qrt):
     page = file(target_qrt + "_Class Schedule_EvCC.html")
 
@@ -142,15 +169,16 @@ def create_schedule(target_qrt):
     desc = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/p[1]')
 
     # filter out empty descriptions
-    #desc_result = []
-    #desc = [desc_result.append(x.text) if x.text else '' for x in desc ]
+
+    # Create a list of descriptions containing stripped version of the data read from the p tag. Replace the misformmated
+    # "No Description Available" to a stripped representaion.
+    desc = [x.text.strip() if "No Description Available" not in x.text else "No Description Available" for x in desc ]
 
     section = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/table/tr[2]/td[2]/text()[normalize-space(.) != .]')
 
     credits = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/table/tr[2]/td[3]/text()')
 
     capacity = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/table/tr[4]/td[1]/text()')
-
 
     enrolled = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/table/tr[4]/td[2]/text()')
 
@@ -169,16 +197,15 @@ def create_schedule(target_qrt):
 
     day_list = parse_days_from_string(days)
     #print day_list
-    #table = [course_title,desc_result,section,credits,capacity,enrolled,start_time,end_time,days,location]
-    table = [course_title,section,credits,capacity,enrolled,start_time,end_time,days,location]
-
+    #print course_title
+    [course_numbers,course_titles] = parse_title(course_title)
     schedule = []
     for i in range(len(day_list)):
         #print i
         for j in range(len(day_list[i])):
             if len(day_list[i])  != 0:
                 #schedule.append([course_title[i],desc_result[i],section[i],credits[i],start_time[i],end_time[i],day_list[i][j],location[i]])
-                schedule.append([course_title[i],section[i],credits[i],start_time[i],end_time[i],day_list[i][j],location[i]])
+                schedule.append([course_numbers[i],course_titles[i],-1, credits[i], desc[i],start_time[i],end_time[i],day_list[i][j] ,get_qtr_id(target_qrt), -1,-1])
 
     #for i in range(len(table)):
      #   schedule[:,i] = table[i]
