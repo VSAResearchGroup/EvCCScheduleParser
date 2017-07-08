@@ -15,7 +15,7 @@ def print_row(row):
     print "-------------------"
 
 
-def create_cvs(quarter, schedule):
+def create_cvs(quarter, schedule, fieldnames):
    # wb = xlwt.Workbook()
    #  for curr_quarter in range(len(quarters)):
    #      ws = wb.add_sheet(quarters[curr_quarter] + " Schedule",cell_overwrite_ok=True)
@@ -34,15 +34,15 @@ def create_cvs(quarter, schedule):
   # https://stackoverflow.com/questions/209840/map-two-lists-into-a-dictionary-in-python
 
     # encode all unicode characters into ascii in the description
-   for i in schedule:
-           i[4] =  i[4].encode('ascii', 'ignore')
+    if "Description" in fieldnames:
+        for i in schedule:
+            i[4] =  i[4].encode('ascii', 'ignore')
 
-   with open(quarter+".csv", 'w') as csvfile:
-        fieldnames = ["CourseNumber","Title","MinCredit", "MaxCredit","Description" , "StartTimeID", "EndTimeID","DayID","QuarterID","Year","Status"];
+    with open(quarter+".csv", 'w') as csvfile:
         writer = csv.DictWriter(csvfile,fieldnames=fieldnames)
         writer.writeheader()
         for i in schedule:
-            print i
+            #print i
             writer.writerow(dict(zip(fieldnames,i)))
 
 def convert_to_numerical_time(start, end):
@@ -173,6 +173,8 @@ def create_schedule(target_qrt):
     page.close()
 
     course_title = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/h3/text()')
+
+
     desc = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/p[1]')
 
     # filter out empty descriptions
@@ -205,30 +207,37 @@ def create_schedule(target_qrt):
     day_list = parse_days_from_string(days)
     #print day_list
     #print course_title
+
     [course_numbers,course_titles] = parse_title(course_title)
-    schedule = []
-    for i in range(len(day_list)):
-        #print i
-        for j in range(len(day_list[i])):
-            if len(day_list[i])  != 0:
-                #schedule.append([course_title[i],desc_result[i],section[i],credits[i],start_time[i],end_time[i],day_list[i][j],location[i]])
-                schedule.append([course_numbers[i],course_titles[i],-1, credits[i], desc[i],start_time[i],end_time[i],day_list[i][j] ,get_qtr_id(target_qrt), -1,-1])
+    scheduleCourse = []
+    scheduleCourseTime = []
+
+    for course in range(len(course_numbers)):
+        print course_numbers[course]
+        scheduleCourse.append([course_numbers[course] + section[course], course_titles[course], -1, credits[course], desc[course]])
+        scheduleDays = day_list[course]
+        for i in range(len(scheduleDays)):
+
+            #schedule.append([course_title[i],desc_result[i],section[i],credits[i],start_time[i],end_time[i],day_list[i][j],location[i]])
+            scheduleCourseTime.append([course_numbers[course] + section[course],start_time[course],end_time[course],scheduleDays[i] ,get_qtr_id(target_qrt), -1,-1])
 
     #for i in range(len(table)):
      #   schedule[:,i] = table[i]
 
 
     #schedule = [x * for x in schedule]
-    return schedule
+    return [scheduleCourse,scheduleCourseTime]
 
 if __name__ == "__main__":
     #
     quarters = ["Summer", "Fall", "Spring"]
 
     for i in range(len(quarters)):
-        schedule = create_schedule(quarters[i])
+        scheduleCourse, scheduleCourseTime = create_schedule(quarters[i])
         print "\n" + quarters[i]
 
-        create_cvs(quarters[i], schedule)
+        create_cvs("scheduleCourse"+quarters[i] , scheduleCourse, ["CourseNumber", "Title","MinCredit", "MaxCredit", "Description"])
+        create_cvs("scheduleCourseTime"+quarters[i] , scheduleCourseTime, ["CourseNumber","StartTimeID","EndTimeID","DayID" ,"QuarterID", "Year","Status"])
+
     #print schedules
 
