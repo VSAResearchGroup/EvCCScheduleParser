@@ -36,7 +36,7 @@ def create_cvs(quarter, schedule, fieldnames):
     # encode all unicode characters into ascii in the description
     if "Description" in fieldnames:
         for i in schedule:
-            i[4] =  i[4].encode('ascii', 'ignore')
+            i[5] = i[5].encode('ascii', 'ignore')
 
     with open(quarter+".csv", 'w') as csvfile:
         writer = csv.DictWriter(csvfile,fieldnames=fieldnames)
@@ -91,9 +91,13 @@ def parse_title(titles):
     for i in range(len(titles)):
         core_info = titles[i].split("-")[1].strip()
         core_info = core_info.split(" ")
+        if "ENG" in core_info or "MFG" in core_info:
+            numbers.append(core_info[0] + " " + core_info[1] + " " +core_info[2])
+            titles_r.append(" ".join(core_info[3:len(core_info)]))
+        else:
 
-        numbers.append(core_info[0] + " " + core_info[1])
-        titles_r.append(" ".join(core_info[2:len(core_info)]))
+            numbers.append(core_info[0] + " " + core_info[1])
+            titles_r.append(" ".join(core_info[2:len(core_info)]))
 
     return [numbers,titles_r]
 def parse_days_from_string(days):
@@ -214,12 +218,12 @@ def create_schedule(target_qrt):
 
     for course in range(len(course_numbers)):
         print course_numbers[course]
-        scheduleCourse.append([course_numbers[course] + section[course], course_titles[course], -1, credits[course], desc[course]])
+        scheduleCourse.append([course_numbers[course] ,section[course], course_titles[course], -1, credits[course], desc[course]])
         scheduleDays = day_list[course]
         for i in range(len(scheduleDays)):
 
             #schedule.append([course_title[i],desc_result[i],section[i],credits[i],start_time[i],end_time[i],day_list[i][j],location[i]])
-            scheduleCourseTime.append([course_numbers[course] + section[course],start_time[course],end_time[course],scheduleDays[i] ,get_qtr_id(target_qrt), -1,-1])
+            scheduleCourseTime.append([course_numbers[course],section[course],start_time[course],end_time[course],scheduleDays[i] ,get_qtr_id(target_qrt), -1,-1])
 
     #for i in range(len(table)):
      #   schedule[:,i] = table[i]
@@ -236,8 +240,8 @@ if __name__ == "__main__":
         scheduleCourse, scheduleCourseTime = create_schedule(quarters[i])
         print "\n" + quarters[i]
 
-        create_cvs("scheduleCourse"+quarters[i] , scheduleCourse, ["CourseNumber", "Title","MinCredit", "MaxCredit", "Description"])
-        create_cvs("scheduleCourseTime"+quarters[i] , scheduleCourseTime, ["CourseNumber","StartTimeID","EndTimeID","DayID" ,"QuarterID", "Year","Status"])
+        create_cvs("scheduleCourse"+quarters[i] , scheduleCourse, ["CourseNumber", "Section", "Title","MinCredit", "MaxCredit", "Description"])
+        create_cvs("scheduleCourseTime"+quarters[i] , scheduleCourseTime, ["CourseNumber","Section", "StartTimeID","EndTimeID","DayID" ,"QuarterID", "Year","Status"])
 
     #print schedules
 
