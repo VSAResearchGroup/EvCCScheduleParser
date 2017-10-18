@@ -198,17 +198,6 @@ def create_schedule(target_qrt):
 
 
 
-    # hack to remove floating \n in list.
-    #raw_prereq = [x if x.strip() != "" else "" for x in raw_prereq  ]
-    #prereq = []
-
-
-   # for i in range(len(raw_prereq)):
-    #    if i % 2 == 0:
-     #       continue
-      #  else:
-       #     prereq.append(raw_prereq[i])
-
 
     section = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td/table/tr[2]/td[2]/text()[normalize-space(.) != .]')
 
@@ -242,7 +231,7 @@ def create_schedule(target_qrt):
         scheduleCourse.append([course_numbers[course] ,section[course], course_titles[course], credits[course], credits[course], desc[course],prereq[course]])
         scheduleDays = day_list[course]
         for i in range(len(scheduleDays)):
-            scheduleCourseTime.append([course_numbers[course],start_time[course],end_time[course],scheduleDays[i] ,get_qtr_id(target_qrt), 1,-1])
+            scheduleCourseTime.append([course_numbers[course], section[course], start_time[course],end_time[course],scheduleDays[i] ,get_qtr_id(target_qrt), 1,-1])
 
 
     return [scheduleCourse,scheduleCourseTime]
