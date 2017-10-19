@@ -248,7 +248,7 @@ if __name__ == "__main__":
         scheduleCourseTimes.append(scheduleCourseTime)
 
     create_cvs("scheduleCourse" , scheduleCourses, ["CourseNumber", "Section", "Title","MinCredit", "MaxCredit", "Description", "PreRequisites"])
-    create_cvs("scheduleCourseTime" , scheduleCourseTimes, ["CourseNumber", "StartTimeID","EndTimeID","DayID" ,"QuarterID", "Year","Status"])
+    create_cvs("scheduleCourseTime" , scheduleCourseTimes, ["CourseNumber", "Section", "StartTimeID","EndTimeID","DayID" ,"QuarterID", "Year","Status"])
 
     #print schedules
 
