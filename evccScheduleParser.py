@@ -15,7 +15,7 @@ def print_row(row):
     print "-------------------"
 
 
-def create_cvs(filename, schedules, fieldnames):
+def create_csv(filename, schedules, fieldnames):
   # source for use of zip function with dictionary init:
   # https://stackoverflow.com/questions/209840/map-two-lists-into-a-dictionary-in-python
 
@@ -32,7 +32,10 @@ def create_cvs(filename, schedules, fieldnames):
             for j in schedules[i]:
                 writer.writerow(dict(zip(fieldnames,j)))
 
+# takes start and end arrays of string times and converts them to the time ids 
 def convert_to_numerical_time(start, end):
+
+    # convert all the start times
     for i in range(len(start)):
         if start[i] == "":
             continue
@@ -51,7 +54,7 @@ def convert_to_numerical_time(start, end):
         score = score_hr + score_min + 1
         start[i] = score
 
-
+    # convert all the end times
     for i in range(len(start)):
         if end[i] == "":
             continue
@@ -71,6 +74,7 @@ def convert_to_numerical_time(start, end):
         end[i] = score
 
 
+# split course titles into type and course number
 def parse_title(titles):
     numbers = []
     titles_r = []
@@ -78,7 +82,9 @@ def parse_title(titles):
     for i in range(len(titles)):
         core_info = titles[i].split("-")[1].strip()
         core_info = core_info.split(" ")
-        if "ENG" in core_info or "MFG" in core_info:
+
+        # courses like ENG T 300 have 3 fields
+        if len(core_info) == 3:
             numbers.append(core_info[0] + " " + core_info[1] + " " +core_info[2])
             titles_r.append(" ".join(core_info[3:len(core_info)]))
         else:
@@ -88,6 +94,7 @@ def parse_title(titles):
 
     return [numbers,titles_r]
 
+# takes the string of course offerings and converts it into an array of thier ids.
 def parse_days_from_string(days):
     "MTWTh"
 
@@ -107,13 +114,18 @@ def parse_days_from_string(days):
         a = []
         curr_day = days[i]
         curr_day = curr_day.strip()
-        if curr_day == "ARRANGED" or curr_day == "" or curr_day == "DAILY":
+
+        # arranged courses are ignored
+        if curr_day == "ARRANGED" or curr_day == "":
 
             result.append([])
             continue
+
+        # daily courses are offered mon to friday
+        if curr_day == "DAILY":
+            result.append([1,2,3,4,5]);
+            continue;
         for j in range(len(curr_day)):
-
-
 
             if curr_day[j] == "M":
                 a.append(1)
@@ -121,6 +133,8 @@ def parse_days_from_string(days):
                 a.append(3)
             elif curr_day[j] == "F":
                 a.append(5)
+
+            # check if it is tuesday or thursday
             elif curr_day[j] == "T":
 
                 if(j == len(curr_day) -1):
@@ -142,6 +156,7 @@ def parse_days_from_string(days):
 
     return result
 
+# returns the qtr id of the string representation
 def get_qtr_id(qtr):
 
     # 1 Fall
@@ -157,8 +172,14 @@ def get_qtr_id(qtr):
     else:
         return 4
 
+# returns array of array of course and array of course schedulings
+#[scheduleCourse,scheduleCourseTime]
+# target_qtr is the name of the quarter to read the info from the file
+#
+# It is assumed that a file with name [target_qrt]_Class Schedule_EvCC.html
+# exists
 def create_schedule(target_qrt):
-    page = file(target_qrt + "_Class Schedule_EvCC.html")
+    page = file(target_qrt + "_Schedule.html")
 
     tree = a.fromstring(page.read())
 
@@ -176,14 +197,17 @@ def create_schedule(target_qrt):
 
     raw_prereq = tree.xpath('//*[contains(@id,"div")]/td/table/tr/td')
     prereq = []
+
+    # get the prereqs
     for i in range(len(raw_prereq)):
         c = raw_prereq[i].getchildren()
         count  = 0
 
-
+        # all the p tags in the prereq table data
         p_tags = [x  for x in c if a._element_name(x) == 'p']
 
-        print len(p_tags)
+
+        # append the prereq course. if there is no courses add empty string
         if len(p_tags) == 0:
             continue
         elif len(p_tags) == 1 :
@@ -191,6 +215,7 @@ def create_schedule(target_qrt):
 
         else:
             current_string = str(p_tags[1].text_content().strip().encode('ascii', 'ignore'))
+
             if "Prereq:" not in current_string:
                 prereq.append("")
             else:
@@ -225,7 +250,8 @@ def create_schedule(target_qrt):
     [course_numbers,course_titles] = parse_title(course_title)
     scheduleCourse = []
     scheduleCourseTime = []
-    print len(prereq)
+
+    # append to both scheduleCourse and scheduleCourseTime
     for course in range(len(course_numbers)):
         print course_numbers[course]
         scheduleCourse.append([course_numbers[course] ,section[course], course_titles[course], credits[course], credits[course], desc[course],prereq[course]])
@@ -237,18 +263,21 @@ def create_schedule(target_qrt):
     return [scheduleCourse,scheduleCourseTime]
 
 if __name__ == "__main__":
-    #
+    # all the quaters that have schedules
     quarters = ["Summer", "Fall", "Spring"]
 
+    # array of course info
     scheduleCourses = []
+
+    # array of course schedule time
     scheduleCourseTimes = []
     for i in range(len(quarters)):
         scheduleCourse, scheduleCourseTime = create_schedule(quarters[i])
         scheduleCourses.append(scheduleCourse)
         scheduleCourseTimes.append(scheduleCourseTime)
 
-    create_cvs("scheduleCourse" , scheduleCourses, ["CourseNumber", "Section", "Title","MinCredit", "MaxCredit", "Description", "PreRequisites"])
-    create_cvs("scheduleCourseTime" , scheduleCourseTimes, ["CourseNumber", "Section", "StartTimeID","EndTimeID","DayID" ,"QuarterID", "Year","Status"])
+    # create csv for courses
+    create_csv("scheduleCourse" , scheduleCourses, ["CourseNumber", "Section", "Title","MinCredit", "MaxCredit", "Description", "PreRequisites"])
 
-    #print schedules
-
+    # create csv for course scheduling
+    create_csv("scheduleCourseTime" , scheduleCourseTimes, ["CourseNumber", "Section", "StartTimeID","EndTimeID","DayID" ,"QuarterID", "Year","Status"])
